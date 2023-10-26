@@ -1,9 +1,53 @@
 # Terraform Provider for SpiceDB
 
 
-- A resource and a data source [./internal/provider](./internal/provider),
-- Examples (`examples/`) and generated documentation [./docs](./docs),
+- A resource and a data source and [provider](./internal/provider),
+- Examples [examples](./examples) and generated  [documentation](./docs/index.md),
 - Miscellaneous meta files.
+
+## Example
+
+#### Configure provider
+```terraform
+terraform {
+  required_providers {
+    spicedb = {
+      source = "educationperfect/spicedb"
+    }
+  }
+}
+
+provider "spicedb" {
+  endpoint = "localhost:50051"
+  token = "happylittlekey"
+  insecure = true
+}
+```
+
+#### Define schema with `spicedb_schema` resource
+```terraform
+
+resource "spicedb_schema" "test" {
+   schema = <<EOF
+     definition user {}
+
+     definition organization {
+         permission is_member = member
+         relation member : user
+     }
+EOF
+}
+```
+
+#### Use `spicedb_schema` data resource
+```terraform
+
+data "spicedb_schema" "test" { }
+
+output "schema" {
+  value = data.spicedb_schema.test.schema
+}
+```
 
 ## Requirements
 
@@ -59,4 +103,18 @@ or you can do it manually
 ```bash
 docker compose up -d
 TEST_ACC=1 go test -v -cover ./internal/provider/
+```
+
+## Local dev hack
+
+Writing this snippet in `~/.terraformrc` allows Terraform to resolve and use
+locally build provider:
+
+```
+provider_installation {
+  dev_overrides {
+    "educationperfect/spicedb" = "$(go env GOPATH)/bin"
+  }
+  direct {}
+}
 ```

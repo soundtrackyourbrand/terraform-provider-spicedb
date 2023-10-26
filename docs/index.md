@@ -8,15 +8,33 @@ description: |-
 
 # spicedb Provider
 
-
-
 ## Example Usage
 
+#### Configure provider
 ```terraform
+terraform {
+  required_providers {
+    spicedb = {
+      source = "educationperfect/spicedb"
+    }
+  }
+}
+
 provider "spicedb" {
   endpoint = "localhost:50051"
-  token    = "fake-token"
+  token = "happylittlekey"
   insecure = true
+}
+
+resource "spicedb_schema" "test" {
+   schema = <<EOF
+     definition user {}
+
+     definition organization {
+         permission is_member = member
+         relation member : user
+     }
+EOF
 }
 ```
 
