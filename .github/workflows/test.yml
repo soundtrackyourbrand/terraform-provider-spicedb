@@ -72,6 +72,7 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
+
       - name: Add terraformrc override
         run: |
           cat << EOF > ~/.terraformrc
@@ -82,12 +83,21 @@ jobs:
             direct {}
           }
           EOF
+
       - name: Install provider
         run: |
           go mod download
           go install .
+
+      - name: Start SpiceDB container
+        run: docker compose up -d
+
       - name: Run tests
         env:
           TF_ACC: "1"
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
+
+      - name: Stop SpiceDB container
+        if: always()
+        run: docker compose down -v
