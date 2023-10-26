@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+
+  spicedb:
+    image: ${SPICEDB_IMAGE:-authzed/spicedb}:${SPICEDB_IMAGE_TAG:-v1.25.0}
+    command: serve --http-enabled
+    ports:
+      - 8443:8443
+      - 50051:50051
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=localhost:50051"]
+      interval: 5s
+      timeout: 30s
+      retries: 5
+    environment:
+      - SPICEDB_GRPC_PRESHARED_KEY=happylittlekey
+      - SPICEDB_TELEMETRY_ENDPOINT= # Disable default telemetry endpoint of https://telemetry.authzed.com

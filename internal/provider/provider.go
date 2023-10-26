@@ -1,84 +1,132 @@
-// Copyright (c) HashiCorp, Inc.
-// SPDX-License-Identifier: MPL-2.0
-
 package provider
 
 import (
 	"context"
-	"net/http"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/authzed/authzed-go/v1"
+	"github.com/authzed/grpcutil"
 )
 
-// Ensure ScaffoldingProvider satisfies various provider interfaces.
-var _ provider.Provider = &ScaffoldingProvider{}
+// Ensure SpiceDBProvider satisfies various provider interfaces.
+var _ provider.Provider = &SpiceDBProvider{}
 
-// ScaffoldingProvider defines the provider implementation.
-type ScaffoldingProvider struct {
-	// version is set to the provider version on release, "dev" when the
-	// provider is built and ran locally, and "test" when running acceptance
-	// testing.
+// SpiceDBProvider defines the provider implementation.
+type SpiceDBProvider struct {
 	version string
 }
 
-// ScaffoldingProviderModel describes the provider data model.
-type ScaffoldingProviderModel struct {
+type SpiceDBProviderModel struct {
 	Endpoint types.String `tfsdk:"endpoint"`
+	Token    types.String `tfsdk:"token"`
+	Insecure types.Bool   `tfsdk:"insecure"`
 }
 
-func (p *ScaffoldingProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "scaffolding"
+func (p *SpiceDBProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "spicedb"
 	resp.Version = p.version
 }
 
-func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *SpiceDBProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "Example provider attribute",
+				MarkdownDescription: "SpiceDB gRPC API endpoint",
+				Required:            true,
+			},
+			"token": schema.StringAttribute{
+				MarkdownDescription: "SpiceDB API token",
+				Required:            true,
+			},
+			"insecure": schema.BoolAttribute{
+				MarkdownDescription: "Connect over a plaintext connection",
 				Optional:            true,
 			},
 		},
 	}
 }
 
-func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data ScaffoldingProviderModel
+func (p *SpiceDBProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	tflog.Info(ctx, "Configuring SpiceDB client")
+
+	var data SpiceDBProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Configuration values are now available.
-	// if data.Endpoint.IsNull() { /* ... */ }
+	if data.Endpoint.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("endpoint"),
+			"Endpoint is not provided",
+			"SpiceDB Endpoint is required so that the provider knows how to talk to SpiceDB. "+
+				"It is expected to be a GRPC url like `grpc.authzed.com:443`")
+	}
 
-	// Example client configuration for data sources and resources
-	client := http.DefaultClient
+	if data.Token.IsNull() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("token"),
+			"Token is not provided",
+			"SpiceDB API token is required so that the provider knows how to talk to SpiceDB. "+
+				"It is expected to be a bearer token like `t_your_token_here_1234567deadbeef`")
+	}
+
+	opts := []grpc.DialOption{}
+
+	if data.Insecure.ValueBool() {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		opts = append(opts, grpcutil.WithInsecureBearerToken(data.Token.ValueString()))
+	} else {
+		systemCerts, err := grpcutil.WithSystemCerts(grpcutil.VerifyCA)
+		if err != nil {
+			resp.Diagnostics.AddError("SpiceDB Provider Error", fmt.Sprintf("Unable to use system certs, got error: %s", err))
+			return
+		}
+		opts = append(opts, grpcutil.WithBearerToken(data.Token.ValueString()))
+		opts = append(opts, systemCerts)
+	}
+
+	client, err := authzed.NewClient(
+		data.Endpoint.ValueString(),
+		opts...,
+	)
+	if err != nil {
+		resp.Diagnostics.AddError("Unable to configure SpiceDB client", fmt.Sprintf("Unable to configure SpiceDB client, got error: %s", err))
+		return
+	}
+
 	resp.DataSourceData = client
 	resp.ResourceData = client
+
+	tflog.Info(ctx, "Configured SpiceDB client", map[string]any{"success": true})
 }
 
-func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *SpiceDBProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewExampleResource,
+		NewSchemaResource,
 	}
 }
 
-func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *SpiceDBProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewExampleDataSource,
+		NewSchemaDataSource,
 	}
 }
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &ScaffoldingProvider{
+		return &SpiceDBProvider{
 			version: version,
 		}
 	}

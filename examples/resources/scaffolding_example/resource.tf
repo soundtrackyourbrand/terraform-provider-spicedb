@@ -1,3 +1,10 @@
-resource "scaffolding_example" "example" {
-  configurable_attribute = "some-value"
+resource "spicedb_schema" "test" {
+  schema = <<EOF
+definition user {}
+
+definition organization {
+    permission is_member = member
+    relation member : user
+}
+EOF
 }
