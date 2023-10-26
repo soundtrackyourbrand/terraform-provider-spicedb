@@ -86,6 +86,9 @@ Fill this in for each provider
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
 
+Alternatively you can use [Nix](https://nixos.org/download) and all the required tools will be ready
+for you in a [nix shell](./shell.nix) automatically.
+
 To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 To generate or update documentation, run `go generate`.
