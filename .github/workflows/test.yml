@@ -74,6 +74,16 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
+      - name: Add terraformrc override
+        run: |
+          cat << EOF > ~/.terraformrc
+          provider_installation {
+            dev_overrides {
+              "educationperfect/spicedb" = "$(go env GOPATH)/bin"
+            }
+            direct {}
+          }
+          EOF
       - run: go mod download
       - env:
           TF_ACC: "1"
