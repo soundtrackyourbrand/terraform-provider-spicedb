@@ -37,8 +37,8 @@ jobs:
         uses: "google-github-actions/get-secretmanager-secrets@v2"
         with:
           secrets: |-
-            pk:syb-staging-infrastructure
-            passphrase:syb-staging-infrastructure
+            pk:syb-staging-infrastructure/platform-private-key
+            passphrase:syb-staging-infrastructure/platform-passphrase
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@82a020f1f7f605c65dd2449b392a52c3fcfef7ef # v6.0.0
         id: import_gpg
