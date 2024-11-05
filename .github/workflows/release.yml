@@ -29,8 +29,8 @@ jobs:
       - name: Authenticate with Google Cloud
         uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: "projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider"
-          service_account: "my-service-account@my-project.iam.gserviceaccount.com"
+          workload_identity_provider: "projects/211434139558/locations/global/workloadIdentityPools/tf-publisher-gha/providers/tf-publisher-gha-provider"
+          service_account: "tf-publisher-gha@syb-staging-infrastructure.iam.gserviceaccount.com"
 
       - name: Fetch secrets
         id: fetch_secrets
@@ -46,6 +46,7 @@ jobs:
           gpg_private_key: ${{ steps.fetch_secrets.outputs.pk }}
           passphrase: ${{ steps.fetch_secrets.outputs.passphrase }}
       - name: Run GoReleaser
+        id: goreleaser
         uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 # v5.0.0
         with:
           args: release --clean
@@ -53,3 +54,22 @@ jobs:
           # GitHub sets the GITHUB_TOKEN secret automatically.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+
+      - name: Parse artifacts
+        id: parse_artifacts
+        shell: bash
+        working-directory: "dist"
+        run: echo "SHA256SUMS=$(ls dist/*SHA256SUMS)" >> $GITHUB_ENV
+
+      - name: Publish to Boring registry bucket
+        id: publish
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ghcr.io/boring-registry/boring-registry:v0.14.0
+          shell: bash
+          working-directory: "dist"
+          run: |
+            boring-registry publish \
+              --bucket boring-registry \
+              --path boring-registry \
+              --source $SHA256SUMS
