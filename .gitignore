@@ -34,3 +34,4 @@ website/vendor
 *.winfile eol=crlf
 
 .direnv/
+gha-creds-*.json
