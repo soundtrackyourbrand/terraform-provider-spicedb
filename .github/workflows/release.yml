@@ -59,12 +59,12 @@ jobs:
         id: parse_artifacts
         shell: bash
         working-directory: "dist"
-        run: echo "SHA256SUMS=$(ls dist/*SHA256SUMS)" >> $GITHUB_ENV
+        run: echo "sha256sums=$(ls dist/*SHA256SUMS)" >> "$GITHUB_OUTPUT"
 
       - name: Publish to Boring registry bucket
-        id: publish
-        uses: addnab/docker-run-action@v3
-        with:
-          image: ghcr.io/boring-registry/boring-registry:v0.14.0
-          entrypoint: ./boring-registry
-          args: upload provider --namespace spicedb --filename-sha256sums $SHA256SUMS --storage-gcs-bucket tf-boring-registry-test
+        run: |
+          SHA256SUMS=$(echo ${{ parse_artifacts.outputs.sha256sums }})
+          go install github.com/boring-registry/boring-registry@v0.14.0
+          echo "SHA256SUMS: $SHA256SUMS"
+          echo "Uploading to Boring registry bucket"
+          boring-registry upload provider --namespace spicedb --filename-sha256sums $SHA256SUMS --storage-gcs-bucket tf-boring-registry-test
