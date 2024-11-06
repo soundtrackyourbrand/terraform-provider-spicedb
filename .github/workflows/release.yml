@@ -66,8 +66,6 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ghcr.io/boring-registry/boring-registry:v0.14.0
-          shell: bash
-          working-directory: "dist"
           run: |
             boring-registry publish \
               --bucket boring-registry \
