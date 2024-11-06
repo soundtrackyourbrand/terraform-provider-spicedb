@@ -59,7 +59,7 @@ jobs:
         id: parse_artifacts
         shell: bash
         working-directory: "dist"
-        run: echo "sha256sums=$(ls *SHA256SUMS)" >> "$GITHUB_OUTPUT"
+        run: echo "sha256sums=$(ls $PWD/*SHA256SUMS)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Go 1.22
         uses: actions/setup-go@v2
