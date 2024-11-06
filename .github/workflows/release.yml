@@ -63,7 +63,7 @@ jobs:
 
       - name: Publish to Boring registry bucket
         run: |
-          SHA256SUMS=$(echo ${{ parse_artifacts.outputs.sha256sums }})
+          SHA256SUMS=$(echo ${{ steps.parse_artifacts.outputs.sha256sums }})
           go install github.com/boring-registry/boring-registry@v0.14.0
           echo "SHA256SUMS: $SHA256SUMS"
           echo "Uploading to Boring registry bucket"
