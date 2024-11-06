@@ -67,7 +67,7 @@ jobs:
         with:
           image: ghcr.io/boring-registry/boring-registry:v0.14.0
           run: |
-            boring-registry publish \
-              --bucket boring-registry \
-              --path boring-registry \
-              --source $SHA256SUMS
+            boring-registry upload provider
+            --namespace spicedb
+            --filename-sha256sums $SHA256SUMS
+            --storage-gcs-bucket tf-boring-registry-test
