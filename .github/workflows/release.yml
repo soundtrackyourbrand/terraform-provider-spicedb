@@ -59,12 +59,16 @@ jobs:
         id: parse_artifacts
         shell: bash
         working-directory: "dist"
-        run: echo "sha256sums=$(ls dist/*SHA256SUMS)" >> "$GITHUB_OUTPUT"
+        run: echo "sha256sums=$(ls *SHA256SUMS)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Go 1.22
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.22
 
       - name: Publish to Boring registry bucket
         run: |
-          SHA256SUMS=$(echo ${{ steps.parse_artifacts.outputs.sha256sums }})
           go install github.com/boring-registry/boring-registry@v0.14.0
           echo "SHA256SUMS: $SHA256SUMS"
           echo "Uploading to Boring registry bucket"
-          boring-registry upload provider --namespace spicedb --filename-sha256sums $SHA256SUMS --storage-gcs-bucket tf-boring-registry-test
+          boring-registry upload provider --namespace spicedb --filename-sha256sums ${{ steps.parse_artifacts.outputs.sha256sums }} --storage-gcs-bucket tf-boring-registry-test
