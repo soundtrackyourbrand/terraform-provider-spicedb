@@ -66,4 +66,5 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ghcr.io/boring-registry/boring-registry:v0.14.0
-          run: upload provider --namespace spicedb --filename-sha256sums $SHA256SUMS --storage-gcs-bucket tf-boring-registry-test
+          entrypoint: boring-registry
+          args: upload provider --namespace spicedb --filename-sha256sums $SHA256SUMS --storage-gcs-bucket tf-boring-registry-test
