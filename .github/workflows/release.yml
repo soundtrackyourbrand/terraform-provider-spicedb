@@ -69,7 +69,7 @@ jobs:
       - name: Publish to Boring registry bucket
         working-directory: "dist"
         run: |
-          go install github.com/boring-registry/boring-registry@v0.14.0
+          go install github.com/boring-registry/boring-registry@v0.15.4
           echo "SHA256SUMS: ${{ steps.parse_artifacts.outputs.sha256sums }}"
           cat ${{ steps.parse_artifacts.outputs.sha256sums }} | grep json
           echo "Uploading to Boring registry bucket"
