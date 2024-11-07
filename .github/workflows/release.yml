@@ -67,6 +67,7 @@ jobs:
           go-version: 1.22
 
       - name: Publish to Boring registry bucket
+        working-directory: "dist"
         run: |
           go install github.com/boring-registry/boring-registry@v0.14.0
           echo "SHA256SUMS: ${{ steps.parse_artifacts.outputs.sha256sums }}"
