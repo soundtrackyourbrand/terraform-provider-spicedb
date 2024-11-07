@@ -70,6 +70,6 @@ jobs:
         run: |
           go install github.com/boring-registry/boring-registry@v0.14.0
           echo "SHA256SUMS: ${{ steps.parse_artifacts.outputs.sha256sums }}"
-          cat ${{ steps.parse_artifacts.outputs.sha256sums }}||grep json
+          cat ${{ steps.parse_artifacts.outputs.sha256sums }} | grep json
           echo "Uploading to Boring registry bucket"
           boring-registry upload provider --namespace spicedb --filename-sha256sums ${{ steps.parse_artifacts.outputs.sha256sums }} --storage-gcs-bucket tf-boring-registry-test
